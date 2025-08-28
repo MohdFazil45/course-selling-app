@@ -1,9 +1,10 @@
 const { Router } = require("express")
-const { z, email, jwt } = require("zod")
+const { z } = require("zod")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const adminRouter = Router()
 const { adminModel } = require("../db")
+require("dotenv").config()
 
 
 adminRouter.post("/signup", async (req, res) => {
@@ -50,13 +51,14 @@ adminRouter.post("/signup", async (req, res) => {
 })
 
 adminRouter.post("/signin",async (req, res) => {
-    const requiredBody = z.object({
+
+    try {
+        const requiredBody = z.object({
         email:z.string().email(),
         password: z.string().min(7).max(16).regex(/[A-Z]/, "Must constain atleast one uppercase letter").regex(/[a-z]/, "Must contain atleast one lowercase letter")
     })
 
     const parseData = requiredBody.safeParse(req.body)
-
     if (!parseData.success) {
         res.json({
             msg:"Incorrect Format",
@@ -66,24 +68,29 @@ adminRouter.post("/signin",async (req, res) => {
 
     const {email,password} = parseData.data
 
-    const userCheck =  adminModel.findOne({ email })
+    const userCheck = await adminModel.findOne({ email })
     if (!userCheck) {
         res.status(401).json({
             msg:"Invalid password or email"
         })
     }
 
-    const correctPassword = bcrypt.compare(password,userCheck.password)
+    const correctPassword = await bcrypt.compare(password,userCheck.password)
 
     if (correctPassword) {
-        const token = jwt.sign({id: user._id, email: user.email })
+        const token = jwt.sign({id: user._id },process.env.JWT_ADMIN_PASSWORD)
+        res.json({
+            token:token
+        })
     }
-
-
-
-    res.json({
-        msg: "signin point hit"
-    })
+    else {
+        res.status(401).json({
+            msg:"Invalid Credential"
+        })
+    }
+    } catch (error) {
+        throw(error)
+    }
 })
 
 adminRouter.post("/course", (req, res) => {
