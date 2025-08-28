@@ -3,7 +3,8 @@ const { z } = require("zod")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const adminRouter = Router()
-const { adminModel } = require("../db")
+const { adminMiddleware} = require("../middlewares/admin")
+const { adminModel,courseModel } = require("../db")
 require("dotenv").config()
 
 
@@ -25,6 +26,7 @@ adminRouter.post("/signup", async (req, res) => {
         return
     }
 
+    const { email, password, firstName, lastName } = parseDataWithSuccess.data
     const userAlreadyExist = await adminModel.findOne({ email })
     if (userAlreadyExist) {
         res.json({
@@ -32,8 +34,6 @@ adminRouter.post("/signup", async (req, res) => {
         })
         return
     }
-
-    const { email, password, firstName, lastName } = parseDataWithSuccess.data
 
     const hashedPassword = await bcrypt.hash(password, 5)
 
@@ -78,7 +78,7 @@ adminRouter.post("/signin",async (req, res) => {
     const correctPassword = await bcrypt.compare(password,userCheck.password)
 
     if (correctPassword) {
-        const token = jwt.sign({id: user._id },process.env.JWT_ADMIN_PASSWORD)
+        const token = jwt.sign({id: userCheck._id },process.env.JWT_ADMIN_PASSWORD)
         res.json({
             token:token
         })
@@ -93,22 +93,90 @@ adminRouter.post("/signin",async (req, res) => {
     }
 })
 
-adminRouter.post("/course", (req, res) => {
-    res.json({
-        msg: "signin point hit"
-    })
+adminRouter.post("/course",adminMiddleware,async (req, res) => {
+    try {
+        const requiredBody = z.object({
+            title:z.string(),
+            description:z.string(),
+            price:z.number(),
+            imageURL:z.string()
+        })
+
+        const parseData = requiredBody.safeParse(req.body)
+        if (!parseData.success) {
+            res.json({
+                msg:"Invalid Entry"
+            })
+        }
+        const {title, description, price, imageURL} = parseData.data
+        const adminId = req.userId
+
+        const course =await courseModel.create({
+            title:title,
+            description:description,
+            price:price,
+            imageURL:imageURL,
+            createrId:adminId
+        })
+        res.json({
+            msg:"course created",
+            courseId: course._id
+        })
+    } catch (error) {
+        throw(error)
+    }
 })
 
-adminRouter.get("/course/bulk", (req, res) => {
-    res.json({
-        msg: "signin point hit"
-    })
+adminRouter.put("/course",adminMiddleware,async (req, res) => {
+    try {
+        const requiredBody = z.object({
+            courseId:z.string(),
+            title:z.string(),
+            description:z.string(),
+            price:z.number(),
+            imageURL:z.string()
+        })
+
+        const parseData = requiredBody.safeParse(req.body)
+        if (!parseData.success) {
+            res.json({
+                msg:"Invalid Entry"
+            })
+        }
+        const {title, description, price, imageURL, courseId} = parseData.data
+        const adminId = req.userId
+
+        const course =await courseModel.updateOne({
+            _id:courseId,
+            createrId:adminId
+        },{
+            title:title,
+            description:description,
+            price:price,
+            imageURL:imageURL,
+        })
+        res.json({
+            msg:"course updated",
+            courseId: course._id
+        })
+    } catch (error) {
+        throw(error)
+    }
 })
 
-adminRouter.put("/course", (req, res) => {
-    res.json({
-        msg: "signin point hit"
-    })
+adminRouter.get("/course/bulk",adminMiddleware,async (req, res) => {
+    try {
+        const adminId = req.userId
+        const courses = await courseModel.find({
+            createrId:adminId
+        })
+        res.json({
+            msg:"course",
+            courses
+        })
+    } catch (error) {
+        throw(error)
+    }
 })
 
 module.exports = {

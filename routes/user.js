@@ -3,7 +3,8 @@ const {z} = require("zod")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const userRouter = Router()
-const { userModel } = require("../db")
+const { userMiddleware} = require("../middlewares/user")
+const { userModel, purchaseModel } = require("../db")
 require("dotenv").config()
 
 userRouter.post("/signup", async (req, res) => {
@@ -91,9 +92,13 @@ userRouter.post("/signin",async (req, res) => {
         throw(error)
     }
 })
-userRouter.get("/purchase", (req, res) => {
+userRouter.get("/purchase",userMiddleware,async (req, res) => {
+    const userId = req.userId
+    const purchases = await purchaseModel.find({
+        userId
+    })
     res.json({
-        msg: "user/purchase point hit"
+        purchases
     })
 })
 
