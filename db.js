@@ -1,5 +1,4 @@
 const mongoose = require("mongoose")
-mongoose.connect('mongodb+srv://Fazilop:Bi4wPWjiyk54g2Uq@cluster0.yw9inxs.mongodb.net/coursera-app')
 const Schema = mongoose.Schema
 const ObjectId = mongoose.Types.ObjectId
 
