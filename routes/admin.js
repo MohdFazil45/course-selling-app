@@ -104,9 +104,10 @@ adminRouter.post("/course",adminMiddleware,async (req, res) => {
 
         const parseData = requiredBody.safeParse(req.body)
         if (!parseData.success) {
-            res.json({
+            return res.status(401).json({
                 msg:"Invalid Entry"
             })
+            
         }
         const {title, description, price, imageURL} = parseData.data
         const adminId = req.userId

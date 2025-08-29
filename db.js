@@ -26,7 +26,7 @@ const courseSchema = new Schema({
 
 const purchaseSchema = new Schema({
     userId:ObjectId,
-    createrId:ObjectId
+    courseId:ObjectId
 })
 
 const userModel = mongoose.model("user",userSchema)

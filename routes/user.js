@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const userRouter = Router()
 const { userMiddleware} = require("../middlewares/user")
-const { userModel, purchaseModel } = require("../db")
+const { userModel, purchaseModel, courseModel } = require("../db")
 require("dotenv").config()
 
 userRouter.post("/signup", async (req, res) => {
@@ -92,13 +92,18 @@ userRouter.post("/signin",async (req, res) => {
         throw(error)
     }
 })
-userRouter.get("/purchase",userMiddleware,async (req, res) => {
+userRouter.get("/purchases",userMiddleware,async (req, res) => {
     const userId = req.userId
     const purchases = await purchaseModel.find({
         userId
     })
+    // console.log(purchases)
+    const courseData = await courseModel.find({
+        _id: { $in: purchases.map(x => x.courseId)}
+    })
     res.json({
-        purchases
+        purchases,
+        courseData
     })
 })
 
