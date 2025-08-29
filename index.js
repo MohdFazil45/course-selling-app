@@ -10,6 +10,7 @@ const {adminRouter} = require("./routes/admin")
 const app = express()
 app.use(express.json())
 
+//* Using all the routes
 app.use("/api/v1/user", userRouter)
 app.use("/api/v1/admin", adminRouter)
 app.use("/api/v1/course", courseRouter)
